@@ -77,9 +77,6 @@ namespace HackTheU2019_Console
                 Console.WriteLine(e.ToString());
             }
 
-            Console.WriteLine("\nPress ENTER to continue...");
-            Console.Read();
-
         }
 
         public static int Main(String[] args)
