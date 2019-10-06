@@ -7,12 +7,14 @@ public class InputHandler {
     private boolean rightButtonDown;
     private float lastTouchX;
     private float lastTouchY;
+    private NetworkOutput networkOutput;
 
     private static InputHandler inputHandler;
 
     private InputHandler(){
         leftButtonDown = rightButtonDown = false;
         lastTouchX = lastTouchY = 0;
+        networkOutput = new NetworkOutput("");
     }
 
     public static InputHandler getInstance(){
@@ -32,7 +34,7 @@ public class InputHandler {
         float dx = lastTouchX-touchX;
         float dy = lastTouchY-touchY;
         Log.d("coordinates changed",dx+" , "+dy);
-        //call movement
+        decideCall(dx,dy);
         moveDown(touchX,touchY);
     }
 
@@ -42,7 +44,7 @@ public class InputHandler {
         }else if(rightButtonDown){
             //right and move
         }else {
-            //move
+            networkOutput.sendMouseMove(dx,dy);
         }
     }
 
@@ -60,10 +62,10 @@ public class InputHandler {
         rightButtonDown=false;
     }
     public void leftButtonClicked(){
-
+        networkOutput.sendMouseLeftClick();
     }
     public void rightButtonClicked(){
-
+        networkOutput.sendMouseRightClick();
     }
 
 
