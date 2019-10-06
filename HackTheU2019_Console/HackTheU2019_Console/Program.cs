@@ -1,6 +1,4 @@
-﻿using HackTheU2019_Lib;
-using HackTheU2019_Lib.Mouse;
-using InTheHand.Net.Sockets;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using WindowsInput;
 
 namespace HackTheU2019_Console
 {
@@ -15,11 +14,11 @@ namespace HackTheU2019_Console
     {
         // Incoming data from the client.  
         public static string data = null;
+        static  InputSimulator sim = new InputSimulator();
 
         public static void StartListening()
         {
-            // Data buffer for incoming data.  
-            byte[] bytes = new Byte[1024];
+            byte[] buffer = new byte[1]; // Only need to store the header
 
             // Establish the local endpoint for the socket.  
             // Dns.GetHostName returns the name of the   
@@ -52,23 +51,9 @@ namespace HackTheU2019_Console
                     // An incoming connection needs to be processed.  
                     while (true)
                     {
-                        int bytesRec = handler.Receive(bytes);
-                        data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                        if (data.IndexOf("<EOF>") > -1)
-                        {
-                            break;
-                        }
+                        handler.Receive(buffer);
+                        ProcessMessage(buffer[0], handler);
                     }
-
-                    // Show the data on the console.  
-                    Console.WriteLine("Text received : {0}", data);
-
-                    // Echo the data back to the client.  
-                    byte[] msg = Encoding.ASCII.GetBytes(data);
-
-                    handler.Send(msg);
-                    handler.Shutdown(SocketShutdown.Both);
-                    handler.Close();
                 }
 
             }
@@ -76,6 +61,83 @@ namespace HackTheU2019_Console
             {
                 Console.WriteLine(e.ToString());
             }
+
+        }
+
+        public static void ProcessMessage(byte header, Socket handler)
+        {
+            if (header == 0)
+            {
+                // Left click
+                sim.Mouse.LeftButtonClick();
+            }
+            else if(header == 2)
+            {
+                // Right click
+                sim.Mouse.RightButtonClick();
+            }
+            else if(header == 3)
+            {
+
+                // Mouse move
+                byte[] buffer = new byte[4];
+                handler.Receive(buffer);
+                Console.WriteLine(bufferToString(buffer));
+                int dx = byteArrayToInt(buffer);
+                handler.Receive(buffer);
+                Console.WriteLine(bufferToString(buffer));
+                int dy = byteArrayToInt(buffer);
+
+                Console.WriteLine("dx: " + dx);
+                Console.WriteLine("dy: " + dy);
+                sim.Mouse.MoveMouseBy(dx, dy);
+            }
+        }
+
+        private static int byteArrayToInt(byte[] buffer)
+        {
+            int twosCompliment = buffer[0] >> 7;
+
+            if(twosCompliment == 1)
+            {
+                for(int i = 0; i < buffer.Length; i++)
+                {
+                    buffer[i] ^= 255;
+                }
+            }
+
+            int result = 0;
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                result += buffer[i] * (int)(Math.Pow(2, buffer.Length - 1 - i));
+            }
+            if(twosCompliment == 1)
+            {
+                result += 1;
+                result *= -1;
+            }
+            return result;
+        }
+
+        private static byte[] intToByteArray(int value)
+        {
+            byte[] buffer = new byte[4];
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                buffer[i] = (byte) (value >> (8 * (buffer.Length - 1 - i)));
+            }
+            return buffer;
+        }
+
+        private static string bufferToString(byte[] buffer)
+        {
+            string builder = "[";
+            foreach (byte spot in buffer)
+            {
+                builder+=spot+", ";
+            }
+            builder+=']';
+            return builder;
 
         }
 

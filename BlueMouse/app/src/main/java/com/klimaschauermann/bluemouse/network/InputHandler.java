@@ -14,7 +14,7 @@ public class InputHandler {
     private InputHandler(){
         leftButtonDown = rightButtonDown = false;
         lastTouchX = lastTouchY = 0;
-        networkOutput = new NetworkOutput("");
+        networkOutput = new NetworkOutput("172.20.17.129");
     }
 
     public static InputHandler getInstance(){
@@ -31,8 +31,8 @@ public class InputHandler {
     }
 
     public void moved(float touchX, float touchY){
-        float dx = lastTouchX-touchX;
-        float dy = lastTouchY-touchY;
+        float dx = touchX-lastTouchX;
+        float dy = touchY-lastTouchY;
         Log.d("coordinates changed",dx+" , "+dy);
         decideCall(dx,dy);
         moveDown(touchX,touchY);

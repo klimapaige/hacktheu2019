@@ -1,8 +1,11 @@
 package com.klimaschauermann.bluemouse.network;
 
+import android.util.Log;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 public class NetworkOutput {
@@ -11,6 +14,8 @@ public class NetworkOutput {
 
     public NetworkOutput(String ipAddress) {
         this.ipAddress = ipAddress;
+
+        connect();
     }
 
     public void connect(){
@@ -58,20 +63,23 @@ public class NetworkOutput {
         thread.start();
     }
 
-    public void sendMouseMove(final double dx, final double dy){
+    public void sendMouseMove(final float dx, final float dy){
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     OutputStream out = socket.getOutputStream();
-                    byte[] buffer = new byte[Double.BYTES];
+                    byte[] buffer = new byte[4];
                     out.write(3);
 
-                    ByteBuffer.wrap(buffer).putDouble(dx);
+                    buffer = intToByteArray(Math.round(dx));
+                    Log.d("dx", dx + ": " + bufferToString(buffer));
                     out.write(buffer);
 
-                    ByteBuffer.wrap(buffer).putDouble(dy);
+                    buffer = intToByteArray(Math.round(dy));
+                    Log.d("dy", dy + ": " + bufferToString(buffer));
                     out.write(buffer);
+                    Log.d("pause","pause");
                 } catch (IOException e){
 
                 }
@@ -80,4 +88,23 @@ public class NetworkOutput {
 
         thread.start();
     }
+
+    private String bufferToString(byte[] buffer){
+        StringBuilder builder = new StringBuilder('[');
+        for (byte spot: buffer) {
+            builder.append(spot).append(", ");
+        }
+        builder.append(']');
+        return builder.toString();
+
+    }
+
+    public static final byte[] intToByteArray(int value) {
+        return new byte[] {
+                (byte)(value >>> 24),
+                (byte)(value >>> 16),
+                (byte)(value >>> 8),
+                (byte)value};
+    }
+
 }
