@@ -54,5 +54,11 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HackTheU2019_Lib\HackTheU2019_Lib.csproj">
+      <Project>{1A040756-5929-49DC-8BA8-BA6216A5966C}</Project>
+      <Name>HackTheU2019_Lib</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

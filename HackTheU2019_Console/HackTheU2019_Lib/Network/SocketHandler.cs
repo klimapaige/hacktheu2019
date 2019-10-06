@@ -1,6 +1,4 @@
-﻿
-using HackTheU2019_Lib.Network;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -9,85 +7,102 @@ using System.Text;
 using System.Threading.Tasks;
 using WindowsInput;
 
-namespace HackTheU2019_Console
+namespace HackTheU2019_Lib.Network
 {
-    class Program
+    public class SocketHandler
     {
-        // Incoming data from the client.  
-        public static string data = null;
-        static  InputSimulator sim = new InputSimulator();
 
-        public static void StartListening()
+        public void StartListening(string ipAddress, int port = 21211)
         {
-            byte[] buffer = new byte[1]; // Only need to store the header
+            byte[] buffer = new byte[1]; // Buffer for the header
+            
+            IPAddress ip = StringToIp(ipAddress);
+            IPEndPoint localEndPoint = new IPEndPoint(ip, port);
 
-            // Establish the local endpoint for the socket.  
-            // Dns.GetHostName returns the name of the   
-            // host running the application.  
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-            //172.20.17.129
-            IPAddress ipAddress = new IPAddress(new byte[4] { 172, 20, 17, 129 });
-            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
-
-            // Create a TCP/IP socket.  
-            Socket listener = new Socket(ipAddress.AddressFamily,
+            Socket listener = new Socket(ip.AddressFamily,
                 SocketType.Stream, ProtocolType.Tcp);
 
-            // Bind the socket to the local endpoint and   
-            // listen for incoming connections.  
             try
             {
                 listener.Bind(localEndPoint);
-                listener.Listen(10);
+                listener.Listen(1);
 
-                // Start listening for connections.  
                 while (true)
                 {
                     Console.WriteLine("Waiting for a connection...");
                     // Program is suspended while waiting for an incoming connection.  
                     Socket handler = listener.Accept();
                     Console.WriteLine("Connection accepted");
-                    data = null;
 
                     // An incoming connection needs to be processed.  
                     while (true)
                     {
-                        handler.Receive(buffer);
-                        ProcessMessage(buffer[0], handler);
+                        try { 
+                            handler.Receive(buffer);
+                            ProcessMessage(buffer[0], handler);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e.Message);
+                            break;
+                        }
                     }
                 }
-
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                Console.WriteLine(e.Message);
             }
-
         }
+
+        private IPAddress StringToIp(string ipAddress)
+        {
+            byte[] ipArray = new byte[4];
+            int index = 0;
+            ipAddress.Split('.').ToList().ForEach(ipString => ipArray[index++] = byte.Parse(ipString));
+            Console.WriteLine(bufferToString(ipArray));
+            return new IPAddress(ipArray);
+        }
+
+        private static InputSimulator sim = new InputSimulator();
 
         public static void ProcessMessage(byte header, Socket handler)
         {
             if (header == 0)
             {
-                // Left click
                 sim.Mouse.LeftButtonClick();
             }
-            else if(header == 2)
+            else if(header == 1)
             {
-                // Right click
+                sim.Mouse.LeftButtonDown();
+            }
+            else if (header == 2)
+            {
+                sim.Mouse.LeftButtonUp();
+            }
+            else if (header == 3)
+            {
                 sim.Mouse.RightButtonClick();
             }
-            else if(header == 3)
+            else if (header == 4)
+            {
+                sim.Mouse.RightButtonDown();
+            }
+            else if (header == 5)
+            {
+                sim.Mouse.RightButtonUp();
+            }
+            else if (header == 6)
             {
 
                 // Mouse move
                 byte[] buffer = new byte[4];
                 handler.Receive(buffer);
-                Console.WriteLine(bufferToString(buffer));
-                int dx = byteArrayToInt(buffer);//BitConverter.ToInt32(buffer, 0);
+                //Console.WriteLine(bufferToString(buffer));
+                int dx = byteArrayToInt(buffer);
                 handler.Receive(buffer);
-                Console.WriteLine(bufferToString(buffer));
-                int dy = byteArrayToInt(buffer);//BitConverter.ToInt32(buffer, 0);
+                //Console.WriteLine(bufferToString(buffer));
+                int dy = byteArrayToInt(buffer);
 
                 Console.WriteLine("dx: " + dx);
                 Console.WriteLine("dy: " + dy);
@@ -99,9 +114,9 @@ namespace HackTheU2019_Console
         {
             int twosCompliment = buffer[0] >> 7;
 
-            if(twosCompliment == 1)
+            if (twosCompliment == 1)
             {
-                for(int i = 0; i < buffer.Length; i++)
+                for (int i = 0; i < buffer.Length; i++)
                 {
                     buffer[i] ^= 255;
                 }
@@ -112,7 +127,7 @@ namespace HackTheU2019_Console
             {
                 result += buffer[i] * (int)(Math.Pow(2, buffer.Length - 1 - i));
             }
-            if(twosCompliment == 1)
+            if (twosCompliment == 1)
             {
                 result += 1;
                 result *= -1;
@@ -125,7 +140,7 @@ namespace HackTheU2019_Console
             byte[] buffer = new byte[4];
             for (int i = 0; i < buffer.Length; i++)
             {
-                buffer[i] = (byte) (value >> (8 * (buffer.Length - 1 - i)));
+                buffer[i] = (byte)(value >> (8 * (buffer.Length - 1 - i)));
             }
             return buffer;
         }
@@ -135,18 +150,11 @@ namespace HackTheU2019_Console
             string builder = "[";
             foreach (byte spot in buffer)
             {
-                builder+=spot+", ";
+                builder += spot + ", ";
             }
-            builder+=']';
+            builder += ']';
             return builder;
 
-        }
-
-        public static int Main(String[] args)
-        {
-            SocketHandler handler = new SocketHandler();
-            handler.StartListening("172.20.17.129");
-            return 0;
         }
     }
 }

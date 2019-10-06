@@ -45,8 +45,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Mouse\WindowsMouse.cs" />
-    <Compile Include="Mouse\IMouseOutput.cs" />
+    <Compile Include="Network\SocketHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
